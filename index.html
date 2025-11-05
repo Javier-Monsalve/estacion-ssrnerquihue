@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estación SSR Nerquihue</title>
+</head>
+<body>
+    <h1>Estación Meteorológica SSR Nerquihue</h1>
+    <p>Conexión MQTT en curso...</p>
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        const options = {
+            username: "SSRNERQUIHUE",
+            password: "nerquihue2025",
+        };
+
+        const client = mqtt.connect("wss://broker.emqx.io:8084/mqtt", options);
+
+        client.on("connect", () => {
+            console.log("Conectado a EMQX");
+            client.subscribe("nerquihue/temp");
+        });
+
+        client.on("message", (topic, message) => {
+            console.log(`${topic}: ${message.toString()}`);
+        });
+    </script>
+</body>
+</html>
