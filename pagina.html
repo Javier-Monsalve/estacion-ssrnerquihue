@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Estación Meteorológica SSRNERQUIHUE</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(to bottom right, #e9f0fa, #f8fbff);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #005fa3;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    .cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      width: 220px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.03);
+    }
+    .label {
+      font-size: 1.2em;
+      color: #555;
+    }
+    .value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #0078d7;
+    }
+    footer {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌦️ Estación Meteorológica SSRNERQUIHUE</h1>
+  <p>Datos en tiempo real desde <strong>broker.emqx.io</strong></p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Temperatura</div>
+      <div class="value" id="temp">-- °C</div>
+    </div>
+    <div class="card">
+      <div class="label">Humedad</div>
+      <div class="value" id="hum">-- %</div>
+    </div>
+    <div class="card">
+      <div class="label">Lluvia</div>
+      <div class="value" id="rain">-- mm</div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 SSRNERQUIHUE — Datos meteorológicos en tiempo real
+  </footer>
+
+  <script>
+    // === CONFIGURACIÓN MQTT ===
+    const broker = "wss://broker.emqx.io:8084/mqtt";
+    const topic = "estacion/datos"; // 🔸 Cambiar si usas otro tópico
+
+    const client = mqtt.connect(broker, {
+      clientId: "web_" + Math.random().toString(16).substr(2, 8),
+      username: "SSRNERQUIHUE",
+      password: "nerquihue2025",
+    });
+
+    client.on("connect", () => {
+      console.log("✅ Conectado al broker EMQX como SSRNERQUIHUE");
+      client.subscribe(topic, (err) => {
+        if (!err) console.log("📡 Suscrito al tópico:", topic);
+        else console.error("❌ Error al suscribirse:", err);
+      });
+    });
+
+    client.on("message", (topic, message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data.temperatura !== undefined)
+          document.getElementById("temp").textContent = data.temperatura + " °C";
+        if (data.humedad !== undefined)
+          document.getElementById("hum").textContent = data.humedad + " %";
+        if (data.lluvia !== undefined)
+          document.getElementById("rain").textContent = data.lluvia + " mm";
+      } catch (e) {
+        console.error("Error procesando mensaje:", e);
+      }
+    });
+
+    client.on("error", (err) => {
+      console.error("❌ Error de conexión:", err);
+    });
+  </script>
+
+</body>
+</html>
