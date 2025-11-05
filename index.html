@@ -71,9 +71,9 @@
     client.on("connect", () => {
       status.textContent = "✅ Conectado a broker.emqx.io";
       status.style.color = "green";
-      client.subscribe("nerquihue/temp");
-      client.subscribe("nerquihue/hum");
-      client.subscribe("nerquihue/lluvia");
+      client.subscribe("estacion/temperatura");
+      client.subscribe("estacion/humedad");
+      client.subscribe("estacion/lluvia2min");
     });
 
     client.on("reconnect", () => {
