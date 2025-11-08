@@ -1,98 +1,140 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Estación Meteorológica SSR Nerquihue</title>
-  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to bottom right, #e3f2fd, #bbdefb);
-      text-align: center;
-      margin: 0;
-      padding: 40px;
-    }
-    h1 {
-      color: #0d47a1;
-      margin-bottom: 10px;
-    }
-    .status {
-      margin: 15px;
-      font-weight: bold;
-    }
-    .card {
-      display: inline-block;
-      background: white;
-      border-radius: 15px;
-      padding: 25px;
-      margin: 15px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-      width: 250px;
-    }
-    .value {
-      font-size: 2em;
-      color: #1976d2;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estación Meteorológica - MQTT</title>
+<!-- Librería MQTT -->
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+<style>
+  body {
+    background: #f0f4f8;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    color: #333;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    background: #1976d2;
+    color: white;
+    padding: 20px;
+    margin: 0 0 20px 0;
+  }
+  .contenedor {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px;
+  }
+  .tarjeta {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 20px;
+  }
+  .titulo {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #1976d2;
+  }
+  .valor {
+    font-size: 32px;
+    font-weight: bold;
+  }
+  .footer {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #777;
+  }
+</style>
 </head>
+
 <body>
-  <h1>Estación Meteorológica SSR Nerquihue</h1>
-  <div class="status" id="status">Conectando a MQTT...</div>
-
-  <div class="card">
-    <h2>Temperatura</h2>
-    <div class="value" id="temp">-- °C</div>
+  <h1>🌤 Estación Meteorológica - MQTT</h1>
+  
+  <div class="contenedor">
+    <div class="tarjeta">
+      <div class="titulo">Temperatura</div>
+      <div id="temp" class="valor">-- °C</div>
+    </div>
+    <div class="tarjeta">
+      <div class="titulo">Humedad</div>
+      <div id="hum" class="valor">-- %</div>
+    </div>
+    <div class="tarjeta">
+      <div class="titulo">Lluvia Caída (últ. 2 min)</div>
+      <div id="lluvia" class="valor">-- mm</div>
+    </div>
+    <div class="tarjeta">
+      <div class="titulo">Fecha</div>
+      <div id="fecha" class="valor">--</div>
+    </div>
+    <div class="tarjeta">
+      <div class="titulo">Pronóstico</div>
+      <div id="pronostico" class="valor">--</div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>Humedad</h2>
-    <div class="value" id="hum">-- %</div>
-  </div>
+  <div class="footer">Conectado a broker.emqx.io</div>
 
-  <div class="card">
-    <h2>Lluvia Caída</h2>
-    <div class="value" id="lluvia">-- mm</div>
-  </div>
+<script>
+  // === CONFIGURACIÓN MQTT ===
+  const broker = "wss://broker.emqx.io:8084/mqtt"; // conexión WebSocket segura
+  const options = {
+    clean: true,
+    connectTimeout: 4000,
+    clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8),
+  };
 
-  <script>
-    const options = {
-      username: "SSRNERQUIHUE",
-      password: "nerquihue2025",
-      reconnectPeriod: 3000
-    };
+  console.log("Conectando al broker MQTT...");
+  const client = mqtt.connect(broker, options);
 
-    const client = mqtt.connect("wss://broker.emqx.io:8084/mqtt", options);
-    const status = document.getElementById("status");
-    const temp = document.getElementById("temp");
-    const hum = document.getElementById("hum");
-    const lluvia = document.getElementById("lluvia");
+  // === EVENTOS DE CONEXIÓN ===
+  client.on("connect", () => {
+    console.log("✅ Conectado a broker.emqx.io");
 
-    client.on("connect", () => {
-      status.textContent = "✅ Conectado a broker.emqx.io";
-      status.style.color = "green";
-      client.subscribe("estacion/temperatura");
-      client.subscribe("estacion/humedad");
-      client.subscribe("estacion/lluvia2min");
-    });
+    // Suscribirse a los tópicos
+    client.subscribe("estacion/temperatura");
+    client.subscribe("estacion/humedad");
+    client.subscribe("estacion/lluvia2min");
+    client.subscribe("estacion/fecha");
+    client.subscribe("estacion/pronostico");
+  });
 
-    client.on("reconnect", () => {
-      status.textContent = "Reconectando...";
-      status.style.color = "orange";
-    });
+  client.on("reconnect", () => {
+    console.log("Reconectando...");
+  });
 
-    client.on("error", (err) => {
-      status.textContent = "❌ Error de conexión";
-      status.style.color = "red";
-      console.error("Error MQTT:", err);
-    });
+  client.on("error", (err) => {
+    console.error("Error de conexión:", err);
+  });
 
-    client.on("message", (topic, message) => {
-      const value = message.toString();
-      if (topic === "nerquihue/temp") temp.textContent = value + " °C";
-      if (topic === "nerquihue/hum") hum.textContent = value + " %";
-      if (topic === "nerquihue/lluvia") lluvia.textContent = value + " mm";
-    });
-  </script>
+  // === AL RECIBIR MENSAJES ===
+  client.on("message", (topic, message) => {
+    const valor = message.toString();
+    console.log(`📩 ${topic}: ${valor}`);
+
+    switch (topic) {
+      case "estacion/temperatura":
+        document.getElementById("temp").innerText = valor + " °C";
+        break;
+      case "estacion/humedad":
+        document.getElementById("hum").innerText = valor + " %";
+        break;
+      case "estacion/lluvia2min":
+        document.getElementById("lluvia").innerText = valor + " mm";
+        break;
+      case "estacion/fecha":
+        document.getElementById("fecha").innerText = valor;
+        break;
+      case "estacion/pronostico":
+        document.getElementById("pronostico").innerText = valor;
+        break;
+    }
+  });
+</script>
 </body>
 </html>
+
