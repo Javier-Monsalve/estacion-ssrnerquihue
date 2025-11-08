@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Estación Meteorológica - MQTT</title>
-<!-- Librería MQTT -->
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 
 <style>
@@ -48,93 +47,165 @@
     font-size: 14px;
     color: #777;
   }
+
+  /* === Login === */
+  #login {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .login-box {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    width: 300px;
+  }
+  .login-box h2 {
+    margin-bottom: 20px;
+    color: #1976d2;
+  }
+  .login-box input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+  }
+  .login-box button {
+    width: 100%;
+    padding: 10px;
+    background: #1976d2;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .login-box button:hover {
+    background: #1565c0;
+  }
+  .error {
+    color: red;
+    font-size: 14px;
+  }
+
+  #contenido {
+    display: none;
+  }
 </style>
 </head>
 
 <body>
-  <h1>🌤 Estación Meteorológica - MQTT</h1>
-  
-  <div class="contenedor">
-    <div class="tarjeta">
-      <div class="titulo">Temperatura</div>
-      <div id="temp" class="valor">-- °C</div>
-    </div>
-    <div class="tarjeta">
-      <div class="titulo">Humedad</div>
-      <div id="hum" class="valor">-- %</div>
-    </div>
-    <div class="tarjeta">
-      <div class="titulo">Lluvia Caída (últ. 2 min)</div>
-      <div id="lluvia" class="valor">-- mm</div>
-    </div>
-    <div class="tarjeta">
-      <div class="titulo">Fecha</div>
-      <div id="fecha" class="valor">--</div>
-    </div>
-    <div class="tarjeta">
-      <div class="titulo">Pronóstico</div>
-      <div id="pronostico" class="valor">--</div>
+  <!-- === Ventana de Login === -->
+  <div id="login">
+    <div class="login-box">
+      <h2>Iniciar Sesión</h2>
+      <input type="text" id="usuario" placeholder="Usuario">
+      <input type="password" id="clave" placeholder="Contraseña">
+      <button onclick="verificarLogin()">Entrar</button>
+      <div id="error" class="error"></div>
     </div>
   </div>
 
-  <div class="footer">Conectado a broker.emqx.io</div>
+  <!-- === Contenido Principal === -->
+  <div id="contenido">
+    <h1>🌤 Estación Meteorológica - MQTT</h1>
+  
+    <div class="contenedor">
+      <div class="tarjeta">
+        <div class="titulo">Temperatura</div>
+        <div id="temp" class="valor">-- °C</div>
+      </div>
+      <div class="tarjeta">
+        <div class="titulo">Humedad</div>
+        <div id="hum" class="valor">-- %</div>
+      </div>
+      <div class="tarjeta">
+        <div class="titulo">Lluvia Caída (últ. 2 min)</div>
+        <div id="lluvia" class="valor">-- mm</div>
+      </div>
+      <div class="tarjeta">
+        <div class="titulo">Fecha</div>
+        <div id="fecha" class="valor">--</div>
+      </div>
+      <div class="tarjeta">
+        <div class="titulo">Pronóstico</div>
+        <div id="pronostico" class="valor">--</div>
+      </div>
+    </div>
+
+    <div class="footer">Conectado a broker.emqx.io</div>
+  </div>
 
 <script>
-  // === CONFIGURACIÓN MQTT ===
-  const broker = "wss://broker.emqx.io:8084/mqtt"; // conexión WebSocket segura
-  const options = {
-    clean: true,
-    connectTimeout: 4000,
-    clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8),
-  };
+  // === LOGIN SIMPLE ===
+  function verificarLogin() {
+    const user = document.getElementById("usuario").value.trim();
+    const pass = document.getElementById("clave").value.trim();
+    const error = document.getElementById("error");
 
-  console.log("Conectando al broker MQTT...");
-  const client = mqtt.connect(broker, options);
-
-  // === EVENTOS DE CONEXIÓN ===
-  client.on("connect", () => {
-    console.log("✅ Conectado a broker.emqx.io");
-
-    // Suscribirse a los tópicos
-    client.subscribe("estacion/temperatura");
-    client.subscribe("estacion/humedad");
-    client.subscribe("estacion/lluvia2min");
-    client.subscribe("estacion/fecha");
-    client.subscribe("estacion/pronostico");
-  });
-
-  client.on("reconnect", () => {
-    console.log("Reconectando...");
-  });
-
-  client.on("error", (err) => {
-    console.error("Error de conexión:", err);
-  });
-
-  // === AL RECIBIR MENSAJES ===
-  client.on("message", (topic, message) => {
-    const valor = message.toString();
-    console.log(`📩 ${topic}: ${valor}`);
-
-    switch (topic) {
-      case "estacion/temperatura":
-        document.getElementById("temp").innerText = valor + " °C";
-        break;
-      case "estacion/humedad":
-        document.getElementById("hum").innerText = valor + " %";
-        break;
-      case "estacion/lluvia2min":
-        document.getElementById("lluvia").innerText = valor + " mm";
-        break;
-      case "estacion/fecha":
-        document.getElementById("fecha").innerText = valor;
-        break;
-      case "estacion/pronostico":
-        document.getElementById("pronostico").innerText = valor;
-        break;
+    if (user === "SSR NERQUIHUE" && pass === "nerquihue2025") {
+      document.getElementById("login").style.display = "none";
+      document.getElementById("contenido").style.display = "block";
+      iniciarMQTT();
+    } else {
+      error.textContent = "Usuario o contraseña incorrectos.";
     }
-  });
+  }
+
+  // === MQTT ===
+  function iniciarMQTT() {
+    const broker = "wss://broker.emqx.io:8084/mqtt";
+    const options = {
+      clean: true,
+      connectTimeout: 4000,
+      clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8),
+    };
+
+    console.log("Conectando al broker MQTT...");
+    const client = mqtt.connect(broker, options);
+
+    client.on("connect", () => {
+      console.log("✅ Conectado a broker.emqx.io");
+      client.subscribe("estacion/temperatura");
+      client.subscribe("estacion/humedad");
+      client.subscribe("estacion/lluvia2min");
+      client.subscribe("estacion/fecha");
+      client.subscribe("estacion/pronostico");
+    });
+
+    client.on("error", (err) => {
+      console.error("Error de conexión:", err);
+    });
+
+    client.on("message", (topic, message) => {
+      const valor = message.toString();
+      console.log(`📩 ${topic}: ${valor}`);
+
+      switch (topic) {
+        case "estacion/temperatura":
+          document.getElementById("temp").innerText = valor + " °C";
+          break;
+        case "estacion/humedad":
+          document.getElementById("hum").innerText = valor + " %";
+          break;
+        case "estacion/lluvia2min":
+          document.getElementById("lluvia").innerText = valor + " mm";
+          break;
+        case "estacion/fecha":
+          document.getElementById("fecha").innerText = valor;
+          break;
+        case "estacion/pronostico":
+          document.getElementById("pronostico").innerText = valor;
+          break;
+      }
+    });
+  }
 </script>
 </body>
 </html>
-
