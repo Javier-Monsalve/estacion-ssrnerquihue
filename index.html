@@ -97,6 +97,19 @@
   #contenido {
     display: none;
   }
+
+  #cerrarSesion {
+    background: #e53935;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 20px;
+  }
+  #cerrarSesion:hover {
+    background: #c62828;
+  }
 </style>
 </head>
 
@@ -139,6 +152,8 @@
       </div>
     </div>
 
+    <button id="cerrarSesion" onclick="cerrarSesion()">Cerrar sesión</button>
+
     <div class="footer">Conectado a broker.emqx.io</div>
   </div>
 
@@ -147,19 +162,16 @@
   const CLAVE_CORRECTA = "nerquihue2025";
   const TIEMPO_SESION = 5 * 60 * 1000; // 5 minutos en milisegundos
 
-  // === Verificar sesión guardada ===
+  // === Verificar sesión al cargar ===
   window.onload = () => {
     const sesion = JSON.parse(localStorage.getItem("sesionSSRNERQUIHUE"));
     const ahora = new Date().getTime();
 
     if (sesion && ahora < sesion.expira) {
-      // Sesión activa
-      document.getElementById("login").style.display = "none";
-      document.getElementById("contenido").style.display = "block";
+      mostrarContenido();
       iniciarMQTT();
     } else {
-      // Borrar sesión expirada
-      localStorage.removeItem("sesionSSRNERQUIHUE");
+      cerrarSesion();
     }
   };
 
@@ -172,13 +184,27 @@
     if (user === USUARIO_CORRECTO && pass === CLAVE_CORRECTA) {
       const expira = new Date().getTime() + TIEMPO_SESION;
       localStorage.setItem("sesionSSRNERQUIHUE", JSON.stringify({expira}));
-
-      document.getElementById("login").style.display = "none";
-      document.getElementById("contenido").style.display = "block";
+      mostrarContenido();
       iniciarMQTT();
     } else {
       error.textContent = "Usuario o contraseña incorrectos.";
     }
+  }
+
+  // === Mostrar contenido principal ===
+  function mostrarContenido() {
+    document.getElementById("login").style.display = "none";
+    document.getElementById("contenido").style.display = "block";
+  }
+
+  // === Cerrar sesión ===
+  function cerrarSesion() {
+    localStorage.removeItem("sesionSSRNERQUIHUE");
+    document.getElementById("contenido").style.display = "none";
+    document.getElementById("login").style.display = "flex";
+    document.getElementById("usuario").value = "";
+    document.getElementById("clave").value = "";
+    document.getElementById("error").textContent = "";
   }
 
   // === MQTT ===
