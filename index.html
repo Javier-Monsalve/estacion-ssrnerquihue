@@ -15,8 +15,6 @@
     padding: 0;
     color: #000;
   }
-
-  /* === Encabezado === */
   header {
     background: #039be5;
     color: white;
@@ -25,16 +23,12 @@
     font-size: 20px;
     font-weight: bold;
   }
-
-  /* === Contenedor general === */
   .contenedor {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
   }
-
-  /* === Fila superior: datos === */
   .fila-datos {
     display: flex;
     flex-wrap: wrap;
@@ -42,7 +36,6 @@
     gap: 15px;
     margin-bottom: 30px;
   }
-
   .tarjeta {
     background: white;
     border: 2px solid #0288d1;
@@ -54,34 +47,22 @@
     justify-content: center;
     align-items: center;
   }
-
-  .tarjeta .titulo {
-    font-weight: bold;
-    margin-bottom: 5px;
-  }
-
-  .tarjeta .valor {
-    font-size: 20px;
-    font-weight: bold;
-  }
-
-  /* === Fila inferior: gráficos === */
+  .tarjeta .titulo { font-weight: bold; margin-bottom: 5px; }
+  .tarjeta .valor { font-size: 20px; font-weight: bold; }
   .fila-graficos {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 15px;
   }
-
   .grafico {
     background: white;
     border: 2px solid #0288d1;
     border-radius: 6px;
-    width: 300px;
+    width: 320px;
     height: 220px;
     padding: 10px;
   }
-
   #cerrarSesion {
     margin-top: 25px;
     background: #e53935;
@@ -92,12 +73,7 @@
     cursor: pointer;
     font-weight: bold;
   }
-
-  #cerrarSesion:hover {
-    background: #c62828;
-  }
-
-  /* === Login === */
+  #cerrarSesion:hover { background: #c62828; }
   #login {
     position: fixed;
     top: 0; left: 0;
@@ -107,7 +83,6 @@
     justify-content: center;
     align-items: center;
   }
-
   .login-box {
     background: white;
     padding: 30px;
@@ -116,12 +91,7 @@
     width: 300px;
     text-align: center;
   }
-
-  .login-box h2 {
-    margin-bottom: 20px;
-    color: #1976d2;
-  }
-
+  .login-box h2 { margin-bottom: 20px; color: #1976d2; }
   .login-box input {
     width: 100%;
     padding: 10px;
@@ -129,7 +99,6 @@
     border-radius: 6px;
     border: 1px solid #ccc;
   }
-
   .login-box button {
     width: 100%;
     padding: 10px;
@@ -140,16 +109,8 @@
     font-weight: bold;
     cursor: pointer;
   }
-
-  .login-box button:hover {
-    background: #1565c0;
-  }
-
-  .error {
-    color: red;
-    font-size: 14px;
-  }
-
+  .login-box button:hover { background: #1565c0; }
+  .error { color: red; font-size: 14px; }
   #contenido { display: none; }
 </style>
 </head>
@@ -172,38 +133,17 @@
 
     <div class="contenedor">
       <div class="fila-datos">
-        <div class="tarjeta">
-          <div class="titulo">Temperatura</div>
-          <div id="temp" class="valor">-- °C</div>
-        </div>
-        <div class="tarjeta">
-          <div class="titulo">Humedad</div>
-          <div id="hum" class="valor">-- %</div>
-        </div>
-        <div class="tarjeta">
-          <div class="titulo">Lluvia Caída</div>
-          <div id="lluvia" class="valor">-- mm</div>
-        </div>
-        <div class="tarjeta">
-          <div class="titulo">Fecha</div>
-          <div id="fecha" class="valor">--</div>
-        </div>
-        <div class="tarjeta">
-          <div class="titulo">Pronóstico</div>
-          <div id="pronostico" class="valor">--</div>
-        </div>
+        <div class="tarjeta"><div class="titulo">Temperatura</div><div id="temp" class="valor">-- °C</div></div>
+        <div class="tarjeta"><div class="titulo">Humedad</div><div id="hum" class="valor">-- %</div></div>
+        <div class="tarjeta"><div class="titulo">Lluvia Caída</div><div id="lluvia" class="valor">-- mm</div></div>
+        <div class="tarjeta"><div class="titulo">Fecha</div><div id="fecha" class="valor">--</div></div>
+        <div class="tarjeta"><div class="titulo">Pronóstico</div><div id="pronostico" class="valor">--</div></div>
       </div>
 
       <div class="fila-graficos">
-        <div class="grafico">
-          <canvas id="grafTemp"></canvas>
-        </div>
-        <div class="grafico">
-          <canvas id="grafHum"></canvas>
-        </div>
-        <div class="grafico">
-          <canvas id="grafLluvia"></canvas>
-        </div>
+        <div class="grafico"><canvas id="grafTemp"></canvas></div>
+        <div class="grafico"><canvas id="grafHum"></canvas></div>
+        <div class="grafico"><canvas id="grafLluvia"></canvas></div>
       </div>
 
       <button id="cerrarSesion" onclick="cerrarSesion()">Cerrar Sesión</button>
@@ -213,7 +153,9 @@
 <script>
   const USUARIO_CORRECTO = "SSR NERQUIHUE";
   const CLAVE_CORRECTA = "nerquihue2025";
-  const TIEMPO_SESION = 5 * 60 * 1000; // 5 minutos
+  const TIEMPO_SESION = 5 * 60 * 1000;
+
+  let ultimaHora = "--";
 
   window.onload = () => {
     const sesion = JSON.parse(localStorage.getItem("sesionSSRNERQUIHUE"));
@@ -221,6 +163,7 @@
     if (sesion && ahora < sesion.expira) {
       mostrarContenido();
       iniciarMQTT();
+      cargarHistorial();
     } else cerrarSesion();
   };
 
@@ -228,12 +171,12 @@
     const user = document.getElementById("usuario").value.trim();
     const pass = document.getElementById("clave").value.trim();
     const error = document.getElementById("error");
-
     if (user === USUARIO_CORRECTO && pass === CLAVE_CORRECTA) {
       const expira = new Date().getTime() + TIEMPO_SESION;
       localStorage.setItem("sesionSSRNERQUIHUE", JSON.stringify({expira}));
       mostrarContenido();
       iniciarMQTT();
+      cargarHistorial();
     } else error.textContent = "Usuario o contraseña incorrectos.";
   }
 
@@ -255,12 +198,7 @@
   let client;
   function iniciarMQTT() {
     const broker = "wss://broker.emqx.io:8084/mqtt";
-    const options = {
-      clean: true,
-      connectTimeout: 4000,
-      clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8),
-    };
-
+    const options = { clean: true, connectTimeout: 4000, clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8) };
     client = mqtt.connect(broker, options);
 
     client.on("connect", () => {
@@ -275,10 +213,10 @@
     client.on("message", (topic, message) => {
       const valor = message.toString();
       switch (topic) {
-        case "estacion/temperatura": actualizarValor("temp", valor + " °C"); agregarDato(graficoTemp, valor); break;
-        case "estacion/humedad": actualizarValor("hum", valor + " %"); agregarDato(graficoHum, valor); break;
-        case "estacion/lluvia2min": actualizarValor("lluvia", valor + " mm"); agregarDato(graficoLluvia, valor); break;
-        case "estacion/fecha": actualizarValor("fecha", valor); break;
+        case "estacion/fecha": ultimaHora = valor.split(" ")[1] || valor; actualizarValor("fecha", valor); break;
+        case "estacion/temperatura": actualizarValor("temp", valor + " °C"); agregarDato(graficoTemp, ultimaHora, valor, "temp"); break;
+        case "estacion/humedad": actualizarValor("hum", valor + " %"); agregarDato(graficoHum, ultimaHora, valor, "hum"); break;
+        case "estacion/lluvia2min": actualizarValor("lluvia", valor + " mm"); agregarDato(graficoLluvia, ultimaHora, valor, "lluvia"); break;
         case "estacion/pronostico": actualizarValor("pronostico", valor); break;
       }
     });
@@ -288,7 +226,7 @@
     document.getElementById(id).innerText = texto;
   }
 
-  // === Gráficos ===
+  // === GRÁFICOS ===
   const graficoTemp = crearGrafico("grafTemp", "Temperatura (°C)", "#ef5350");
   const graficoHum = crearGrafico("grafHum", "Humedad (%)", "#42a5f5");
   const graficoLluvia = crearGrafico("grafLluvia", "Lluvia (mm)", "#26a69a");
@@ -297,21 +235,43 @@
     const ctx = document.getElementById(id).getContext("2d");
     return new Chart(ctx, {
       type: "line",
-      data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false }] },
-      options: { scales: { x: { display: false } }, responsive: true, maintainAspectRatio: false }
+      data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false, tension: 0.3 }] },
+      options: {
+        scales: { x: { title: { display: true, text: "Hora" } }, y: { beginAtZero: true } },
+        responsive: true, maintainAspectRatio: false
+      }
     });
   }
 
-  function agregarDato(chart, valor) {
+  function agregarDato(chart, hora, valor, tipo) {
     const num = parseFloat(valor);
     if (isNaN(num)) return;
-    chart.data.labels.push("");
+    chart.data.labels.push(hora);
     chart.data.datasets[0].data.push(num);
-    if (chart.data.labels.length > 20) {
+    if (chart.data.labels.length > 100) {
       chart.data.labels.shift();
       chart.data.datasets[0].data.shift();
     }
     chart.update();
+    guardarHistorial(tipo, hora, num);
+  }
+
+  // === HISTORIAL LOCAL ===
+  function guardarHistorial(tipo, hora, valor) {
+    let historial = JSON.parse(localStorage.getItem("historial_" + tipo)) || [];
+    historial.push({hora, valor});
+    if (historial.length > 100) historial.shift();
+    localStorage.setItem("historial_" + tipo, JSON.stringify(historial));
+  }
+
+  function cargarHistorial() {
+    ["temp", "hum", "lluvia"].forEach(tipo => {
+      let datos = JSON.parse(localStorage.getItem("historial_" + tipo)) || [];
+      const chart = tipo === "temp" ? graficoTemp : tipo === "hum" ? graficoHum : graficoLluvia;
+      chart.data.labels = datos.map(d => d.hora);
+      chart.data.datasets[0].data = datos.map(d => d.valor);
+      chart.update();
+    });
   }
 </script>
 </body>
