@@ -235,10 +235,39 @@
     const ctx = document.getElementById(id).getContext("2d");
     return new Chart(ctx, {
       type: "line",
-      data: { labels: [], datasets: [{ label, data: [], borderColor: color, fill: false, tension: 0.3 }] },
+      data: { 
+        labels: [], 
+        datasets: [{
+          label,
+          data: [],
+          borderColor: color,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: color,
+          borderWidth: 2
+        }]
+      },
       options: {
-        scales: { x: { title: { display: true, text: "Hora" } }, y: { beginAtZero: true } },
-        responsive: true, maintainAspectRatio: false
+        scales: {
+          x: {
+            title: { display: true, text: "Hora" },
+            ticks: { autoSkip: true, maxTicksLimit: 8 }
+          },
+          y: {
+            beginAtZero: false,
+            title: { display: false },
+            ticks: { precision: 2 },
+            grace: "5%" // 🔹 agrega margen superior e inferior
+          }
+        },
+        plugins: {
+          legend: {
+            labels: { boxWidth: 20, font: { size: 12, weight: 'bold' } }
+          }
+        },
+        responsive: true,
+        maintainAspectRatio: false
       }
     });
   }
