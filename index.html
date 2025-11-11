@@ -1,215 +1,193 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Estación Meteorológica SSR Nerquihue</title>
-<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
-  body { background: #bdbdbd; font-family: Arial, sans-serif; margin: 0; padding: 0; color: #000; }
-  header { background: #039be5; color: white; text-align: center; padding: 15px; font-size: 20px; font-weight: bold; }
-  .contenedor { display: flex; flex-direction: column; align-items: center; padding: 20px; }
-  .fila-datos { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 30px; }
-  .tarjeta {
-    background: white; border: 2px solid #0288d1; border-radius: 6px;
-    width: 180px; height: 90px; display: flex; flex-direction: column;
-    justify-content: center; align-items: center;
-  }
-  .tarjeta .titulo { font-weight: bold; margin-bottom: 5px; }
-  .tarjeta .valor { font-size: 20px; font-weight: bold; }
-  .fila-graficos { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
-  .grafico { background: white; border: 2px solid #0288d1; border-radius: 6px; width: 320px; height: 220px; padding: 10px; }
-  #cerrarSesion {
-    margin-top: 25px; background: #e53935; border: none; color: white;
-    padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;
-  }
-  #cerrarSesion:hover { background: #c62828; }
-  #login { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
-  .login-box {
-    background: white; padding: 30px; border-radius: 10px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.3); width: 300px; text-align: center;
-  }
-  .login-box h2 { margin-bottom: 20px; color: #1976d2; }
-  .login-box input {
-    width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc;
-  }
-  .login-box button {
-    width: 100%; padding: 10px; background: #1976d2; border: none;
-    border-radius: 6px; color: white; font-weight: bold; cursor: pointer;
-  }
-  .login-box button:hover { background: #1565c0; }
-  .error { color: red; font-size: 14px; }
-  #contenido { display: none; }
+body {
+  font-family: Arial, sans-serif;
+  background-color: #bfbfbf;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+}
+header {
+  background-color: #2196f3;
+  color: white;
+  padding: 12px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
+  justify-items: center;
+  padding: 10px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.card {
+  background: #fff;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 12px;
+  text-align: center;
+  width: 100%;
+  max-width: 250px;
+}
+.chart-container {
+  background: #fff;
+  border: 2px solid #2196f3;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 10px;
+  width: 100%;
+  max-width: 420px;
+}
+button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+button:hover {
+  background-color: #d32f2f;
+}
 </style>
 </head>
-
 <body>
-  <!-- === LOGIN === -->
-  <div id="login">
-    <div class="login-box">
-      <h2>Iniciar Sesión</h2>
-      <input type="text" id="usuario" placeholder="Usuario">
-      <input type="password" id="clave" placeholder="Contraseña">
-      <button onclick="verificarLogin()">Entrar</button>
-      <div id="error" class="error"></div>
+  <header>🌤️ Estación Meteorológica SSR Nerquihue</header>
+
+  <div class="container">
+    <div class="card">
+      <h4>Temperatura</h4>
+      <h3 id="temp">-- °C</h3>
+    </div>
+    <div class="card">
+      <h4>Humedad</h4>
+      <h3 id="hum">-- %</h3>
+    </div>
+    <div class="card">
+      <h4>Lluvia Caída</h4>
+      <h3 id="lluvia">-- mm</h3>
+    </div>
+    <div class="card">
+      <h4>Fecha</h4>
+      <h3 id="fecha">--</h3>
+    </div>
+    <div class="card">
+      <h4>Pronóstico</h4>
+      <h3>🌤️ Estable / sin cambios</h3>
     </div>
   </div>
 
-  <!-- === DASHBOARD === -->
-  <div id="contenido">
-    <header>🌤 Estación Meteorológica SSR Nerquihue</header>
-
-    <div class="contenedor">
-      <div class="fila-datos">
-        <div class="tarjeta"><div class="titulo">Temperatura</div><div id="temp" class="valor">-- °C</div></div>
-        <div class="tarjeta"><div class="titulo">Humedad</div><div id="hum" class="valor">-- %</div></div>
-        <div class="tarjeta"><div class="titulo">Lluvia Caída</div><div id="lluvia" class="valor">-- mm</div></div>
-        <div class="tarjeta"><div class="titulo">Fecha</div><div id="fecha" class="valor">--</div></div>
-        <div class="tarjeta"><div class="titulo">Pronóstico</div><div id="pronostico" class="valor">--</div></div>
-      </div>
-
-      <div class="fila-graficos">
-        <div class="grafico"><canvas id="grafTemp"></canvas></div>
-        <div class="grafico"><canvas id="grafHum"></canvas></div>
-        <div class="grafico"><canvas id="grafLluvia"></canvas></div>
-      </div>
-
-      <button id="cerrarSesion" onclick="cerrarSesion()">Cerrar Sesión</button>
-    </div>
+  <div class="container">
+    <div class="chart-container"><canvas id="tempChart"></canvas></div>
+    <div class="chart-container"><canvas id="humChart"></canvas></div>
+    <div class="chart-container"><canvas id="lluviaChart"></canvas></div>
   </div>
+
+  <button id="logoutBtn">Cerrar Sesión</button>
 
 <script>
-  const USUARIO_CORRECTO = "SSR NERQUIHUE";
-  const CLAVE_CORRECTA = "nerquihue2025";
-  const TIEMPO_SESION = 5 * 60 * 1000;
-  const MAX_DATOS = 24;  // 🔹 SOLO SE MANTENDRÁN LOS ÚLTIMOS 24 DATOS
+const broker = "wss://broker.hivemq.com:8884/mqtt";
+const topic = "nerquihue/estacion";
 
-  let ultimaHora = "--";
+const options = { clean: true, connectTimeout: 4000, reconnectPeriod: 4000 };
+const client = mqtt.connect(broker, options);
 
-  window.onload = () => {
-    const sesion = JSON.parse(localStorage.getItem("sesionSSRNERQUIHUE"));
-    const ahora = new Date().getTime();
-    if (sesion && ahora < sesion.expira) {
-      mostrarContenido();
-      iniciarMQTT();
-      cargarHistorial();
-    } else cerrarSesion();
-  };
+const maxPoints = 24; // ← solo mostrar las últimas 24 lecturas
 
-  function verificarLogin() {
-    const user = document.getElementById("usuario").value.trim();
-    const pass = document.getElementById("clave").value.trim();
-    const error = document.getElementById("error");
-    if (user === USUARIO_CORRECTO && pass === CLAVE_CORRECTA) {
-      const expira = new Date().getTime() + TIEMPO_SESION;
-      localStorage.setItem("sesionSSRNERQUIHUE", JSON.stringify({expira}));
-      mostrarContenido();
-      iniciarMQTT();
-      cargarHistorial();
-    } else error.textContent = "Usuario o contraseña incorrectos.";
+// === Gráficos ===
+const tempChart = new Chart(document.getElementById("tempChart"), {
+  type: "line",
+  data: { labels: [], datasets: [{
+    label: "Temperatura (°C)", data: [],
+    borderColor: "red", backgroundColor: "rgba(255,0,0,0.2)",
+    pointRadius: 3, fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales: {
+    y: { beginAtZero: false },
+    x: { ticks: { autoSkip: true, maxTicksLimit: 6 } }
+  }}
+});
+
+const humChart = new Chart(document.getElementById("humChart"), {
+  type: "line",
+  data: { labels: [], datasets: [{
+    label: "Humedad (%)", data: [],
+    borderColor: "blue", backgroundColor: "rgba(0,0,255,0.2)",
+    pointRadius: 3, fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales: {
+    y: { beginAtZero: false },
+    x: { ticks: { autoSkip: true, maxTicksLimit: 6 } }
+  }}
+});
+
+const lluviaChart = new Chart(document.getElementById("lluviaChart"), {
+  type: "line",
+  data: { labels: [], datasets: [{
+    label: "Lluvia (mm)", data: [],
+    borderColor: "teal", backgroundColor: "rgba(0,128,128,0.2)",
+    pointRadius: 3, fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales: {
+    y: { beginAtZero: true },
+    x: { ticks: { autoSkip: true, maxTicksLimit: 6 } }
+  }}
+});
+
+// === MQTT ===
+client.on("connect", () => console.log("✅ Conectado a MQTT"));
+client.subscribe(topic);
+
+client.on("message", (topic, message) => {
+  const data = message.toString().split(",");
+  const fecha = data[0];
+  const temp = parseFloat(data[1]);
+  const hum = parseFloat(data[2]);
+  const lluvia = parseFloat(data[3]);
+
+  document.getElementById("temp").textContent = `${temp.toFixed(2)} °C`;
+  document.getElementById("hum").textContent = `${hum.toFixed(2)} %`;
+  document.getElementById("lluvia").textContent = `${lluvia.toFixed(2)} mm`;
+  document.getElementById("fecha").textContent = fecha;
+
+  addData(tempChart, fecha, temp);
+  addData(humChart, fecha, hum);
+  addData(lluviaChart, fecha, lluvia);
+});
+
+function addData(chart, label, data) {
+  chart.data.labels.push(label);
+  chart.data.datasets[0].data.push(data);
+
+  // Borrar los más antiguos si hay más de 24
+  if (chart.data.labels.length > maxPoints) {
+    chart.data.labels.shift();
+    chart.data.datasets[0].data.shift();
   }
 
-  function mostrarContenido() {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("contenido").style.display = "block";
-  }
+  chart.update();
+}
 
-  function cerrarSesion() {
-    localStorage.removeItem("sesionSSRNERQUIHUE");
-    document.getElementById("contenido").style.display = "none";
-    document.getElementById("login").style.display = "flex";
-    document.getElementById("usuario").value = "";
-    document.getElementById("clave").value = "";
-    document.getElementById("error").textContent = "";
-  }
-
-  // === MQTT ===
-  let client;
-  function iniciarMQTT() {
-    const broker = "wss://broker.emqx.io:8084/mqtt";
-    const options = { clean: true, connectTimeout: 4000, clientId: "web_mqtt_" + Math.random().toString(16).substr(2, 8) };
-    client = mqtt.connect(broker, options);
-
-    client.on("connect", () => {
-      console.log("✅ Conectado a broker.emqx.io");
-      client.subscribe("estacion/temperatura");
-      client.subscribe("estacion/humedad");
-      client.subscribe("estacion/lluvia2min");
-      client.subscribe("estacion/fecha");
-      client.subscribe("estacion/pronostico");
-    });
-
-    client.on("message", (topic, message) => {
-      const valor = message.toString();
-      switch (topic) {
-        case "estacion/fecha": ultimaHora = valor.split(" ")[1] || valor; actualizarValor("fecha", valor); break;
-        case "estacion/temperatura": actualizarValor("temp", valor + " °C"); agregarDato(graficoTemp, ultimaHora, valor, "temp"); break;
-        case "estacion/humedad": actualizarValor("hum", valor + " %"); agregarDato(graficoHum, ultimaHora, valor, "hum"); break;
-        case "estacion/lluvia2min": actualizarValor("lluvia", valor + " mm"); agregarDato(graficoLluvia, ultimaHora, valor, "lluvia"); break;
-        case "estacion/pronostico": actualizarValor("pronostico", valor); break;
-      }
-    });
-  }
-
-  function actualizarValor(id, texto) { document.getElementById(id).innerText = texto; }
-
-  // === GRÁFICOS ===
-  const graficoTemp = crearGrafico("grafTemp", "Temperatura (°C)", "#ef5350");
-  const graficoHum = crearGrafico("grafHum", "Humedad (%)", "#42a5f5");
-  const graficoLluvia = crearGrafico("grafLluvia", "Lluvia (mm)", "#26a69a");
-
-  function crearGrafico(id, label, color) {
-    const ctx = document.getElementById(id).getContext("2d");
-    return new Chart(ctx, {
-      type: "line",
-      data: { labels: [], datasets: [{
-        label, data: [], borderColor: color, fill: false,
-        tension: 0.3, pointRadius: 3, pointBackgroundColor: color, borderWidth: 2
-      }] },
-      options: {
-        scales: {
-          x: { title: { display: true, text: "Hora" }, ticks: { autoSkip: true, maxTicksLimit: 8 } },
-          y: { beginAtZero: false, ticks: { precision: 2 } }
-        },
-        plugins: { legend: { labels: { boxWidth: 20, font: { size: 12, weight: 'bold' } } } },
-        responsive: true, maintainAspectRatio: false
-      }
-    });
-  }
-
-  function agregarDato(chart, hora, valor, tipo) {
-    const num = parseFloat(valor);
-    if (isNaN(num)) return;
-    chart.data.labels.push(hora);
-    chart.data.datasets[0].data.push(num);
-    if (chart.data.labels.length > MAX_DATOS) {
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
-    chart.update();
-    guardarHistorial(tipo, hora, num);
-  }
-
-  // === HISTORIAL LOCAL ===
-  function guardarHistorial(tipo, hora, valor) {
-    let historial = JSON.parse(localStorage.getItem("historial_" + tipo)) || [];
-    historial.push({hora, valor});
-    if (historial.length > MAX_DATOS) historial.shift();
-    localStorage.setItem("historial_" + tipo, JSON.stringify(historial));
-  }
-
-  function cargarHistorial() {
-    ["temp", "hum", "lluvia"].forEach(tipo => {
-      let datos = JSON.parse(localStorage.getItem("historial_" + tipo)) || [];
-      const chart = tipo === "temp" ? graficoTemp : tipo === "hum" ? graficoHum : graficoLluvia;
-      chart.data.labels = datos.map(d => d.hora);
-      chart.data.datasets[0].data = datos.map(d => d.valor);
-      chart.update();
-    });
-  }
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("loggedIn");
+  window.location.reload();
+});
 </script>
 </body>
 </html>
